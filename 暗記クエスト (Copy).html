@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>暗記クエスト (Copy)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8eff5; --card:#ffffff; --ink:#14213d; --ink2:#4b5b78; --line:#14213d; --shadow:#14213d;
+  --pri:#2f5bff; --pri-ink:#ffffff; --xp:#ffb703; --xp-ink:#14213d;
+  --ok:#178f63; --ok-bg:#d6f2e5; --ng:#d62839; --ng-bg:#fde0e3; --boss:#a3216f; --track:#cfdae6;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1220; --card:#161e33; --ink:#e8eeff; --ink2:#9fb0d0; --line:#8397cc; --shadow:#04070d;
+    --pri:#7b96ff; --pri-ink:#0c1220; --xp:#ffc83d; --xp-ink:#0c1220;
+    --ok:#4ade9d; --ok-bg:#12382c; --ng:#ff6b7a; --ng-bg:#3d1720; --boss:#f078c4; --track:#26314f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1220; --card:#161e33; --ink:#e8eeff; --ink2:#9fb0d0; --line:#8397cc; --shadow:#04070d;
+  --pri:#7b96ff; --pri-ink:#0c1220; --xp:#ffc83d; --xp-ink:#0c1220;
+  --ok:#4ade9d; --ok-bg:#12382c; --ng:#ff6b7a; --ng-bg:#3d1720; --boss:#f078c4; --track:#26314f;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;
+  font-weight:500;font-size:15px;line-height:1.6;
+}
+.px{font-family:"DotGothic16","Zen Maru Gothic","Hiragino Sans","Noto Sans JP",monospace;font-weight:400;letter-spacing:.02em}
+#app{max-width:520px;margin:0 auto;padding:14px 14px 104px}
+#app.nobar{padding-bottom:24px}
+h1,h2,h3{margin:0;font-weight:900;line-height:1.3}
+h1{font-size:22px}
+h2{font-size:17px}
+h3{font-size:15px;margin:22px 0 10px}
+p{margin:0}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--xp);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 14px}
+.win{background:var(--card);border:3px solid var(--line);border-radius:14px;box-shadow:4px 4px 0 var(--shadow);padding:14px;margin-bottom:16px}
+.sub{color:var(--ink2);font-size:13px}
+
+.btn{font:inherit;font-weight:900;color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:12px;padding:10px 16px;min-height:46px;box-shadow:0 4px 0 var(--shadow);cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow)}
+.btn.pri{background:var(--pri);color:var(--pri-ink)}
+.btn.boss{background:var(--boss);color:#fff}
+.btn.sm{min-height:38px;padding:6px 12px;font-size:13px}
+.btn.wide{width:100%}
+.btn[disabled]{opacity:.45;cursor:default;transform:none;box-shadow:0 4px 0 var(--shadow)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>.btn{flex:1}
+
+.bar{height:16px;border:3px solid var(--line);border-radius:999px;background:var(--track);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--xp);transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.bar.ok>i{background:var(--ok)}
+.bar.boss>i{background:var(--boss)}
+.bar.pri>i{background:var(--pri)}
+
+/* status window */
+.hero-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.lvbox{background:var(--ink);color:var(--bg);border-radius:10px;padding:6px 10px 4px;text-align:center;min-width:72px;line-height:1}
+.lvl{display:block;font-size:12px;opacity:.8}
+.lvn{display:block;font-size:44px}
+.hero-mid{flex:1;min-width:0}
+.rank{font-weight:900;font-size:16px}
+.xptxt{color:var(--ink2);font-size:13px}
+.xptxt .px{font-size:18px;color:var(--ink)}
+.streak{text-align:center;line-height:1.1}
+.streak .fire{display:block;font-size:22px}
+.streak .sn{font-size:24px}
+.streak .sl{display:block;font-size:11px;color:var(--ink2)}
+.xpsub{margin-top:6px;font-size:12px;color:var(--ink2);text-align:right}
+
+/* quest */
+.qh{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.reward{background:var(--xp);color:var(--xp-ink);border-radius:8px;padding:2px 10px;font-size:14px}
+.quest .bar{margin:10px 0 6px}
+.qn{text-align:right;font-size:14px;margin-bottom:10px}
+.quest.done{border-color:var(--ok)}
+.quest.done .reward{background:var(--ok);color:#fff}
+
+.wk{display:flex;gap:8px;align-items:flex-end;height:86px;margin-top:8px}
+.wk .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.wk .stick{width:100%;max-width:30px;border:2px solid var(--line);border-radius:6px 6px 2px 2px;background:var(--pri);min-height:4px}
+.wk .col.today .stick{background:var(--xp)}
+.wk .col span{font-size:11px;color:var(--ink2)}
+.wk .col.today span{color:var(--ink);font-weight:900}
+
+/* decks */
+.deck-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.deck-h h2{overflow-wrap:anywhere}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.chip{font-size:12px;font-weight:700;border:2px solid var(--line);border-radius:8px;padding:0 8px;background:var(--bg)}
+.chip.due{background:var(--xp);color:var(--xp-ink);border-color:var(--xp)}
+.deck .bar{height:12px;margin-bottom:12px}
+
+.empty{text-align:center;padding:22px 14px}
+.empty p{margin-bottom:12px}
+.note{border:2px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:16px;background:var(--card)}
+
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:3px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10}
+.tabs .in{display:flex;max-width:520px;margin:0 auto}
+.tabs button{flex:1;background:none;border:0;font:inherit;font-weight:700;font-size:11px;color:var(--ink2);padding:2px 0;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.tabs .ic{width:48px;height:28px;display:grid;place-items:center;font-size:18px;border-radius:12px}
+.tabs button[aria-current="page"]{color:var(--ink);font-weight:900}
+.tabs button[aria-current="page"] .ic{background:var(--xp)}
+
+/* forms */
+label{display:block;font-weight:900;font-size:13px;margin:0 0 4px}
+input[type=text],textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:3px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:12px}
+textarea{resize:vertical;min-height:170px;line-height:1.5}
+.msg{border:3px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px;font-weight:700}
+.msg.ok{border-color:var(--ok);background:var(--ok-bg)}
+.msg.ng{border-color:var(--ng);background:var(--ng-bg)}
+.msg ul{margin:6px 0 0;padding-left:18px;font-weight:500;font-size:13px}
+.hint code{font-family:"DotGothic16",monospace;background:var(--bg);border-radius:4px;padding:0 4px}
+.dk{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:2px solid var(--track)}
+.dk:first-of-type{border-top:0}
+.dk .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:700}
+.dk .ct{color:var(--ink2);font-size:12px}
+
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.seg button{flex:1;min-width:56px;font:inherit;font-weight:700;font-size:14px;padding:8px 10px;min-height:42px;border:3px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* badges */
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bgrid .win{margin:0;padding:12px;text-align:center}
+.bgrid .ico{font-size:34px;line-height:1.2}
+.bgrid .bn{font-weight:900;font-size:14px}
+.bgrid .bd{font-size:12px;color:var(--ink2)}
+.bgrid .lock{opacity:.5;box-shadow:none;border-style:dashed}
+.bgrid .lock .ico{filter:grayscale(1)}
+.bgrid .when{font-size:11px;color:var(--ok);font-weight:700;margin-top:2px}
+
+/* quiz */
+.qtop{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.qprog{font-size:18px}
+.qtop .combo{margin-left:auto;font-size:16px;color:var(--boss)}
+.ask{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--ng-bg);border-color:var(--ng)}
+.ask p{flex:1;min-width:140px;font-weight:700}
+.bosswin{display:flex;gap:12px;align-items:center;border-color:var(--boss)}
+.sprite{font-size:52px;line-height:1;width:72px;text-align:center;flex:none}
+.sprite.hit{animation:shake .45s}
+.bossinfo{flex:1;min-width:0}
+.bossinfo .nm{font-size:15px;margin-bottom:6px;overflow-wrap:anywhere}
+.hearts{font-size:20px;letter-spacing:2px;margin-top:8px}
+.hearts.hurt{animation:shake .45s}
+.qcard{margin-top:4px}
+.qtag{display:inline-block;background:var(--pri);color:var(--pri-ink);font-size:12px;font-weight:900;border-radius:8px;padding:0 8px;margin-bottom:6px}
+.qtext{font-size:17px;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.choice{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;font:inherit;font-weight:700;color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:12px;padding:11px 12px;min-height:52px;box-shadow:0 4px 0 var(--shadow);margin-bottom:12px;cursor:pointer}
+.choice:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow)}
+.choice .ltr{flex:none;width:30px;height:30px;border:2px solid var(--line);border-radius:8px;display:grid;place-items:center;font-family:"DotGothic16",monospace;font-weight:400;font-size:16px}
+.choice .tx{flex:1;white-space:pre-wrap;overflow-wrap:anywhere;padding-top:2px}
+.choice .mk{flex:none;font-size:18px;padding-top:1px}
+.choice.sel{background:var(--pri);color:var(--pri-ink)}
+.choice.sel .ltr{border-color:currentColor}
+.choice.locked{pointer-events:none;box-shadow:0 4px 0 var(--shadow)}
+.choice.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ink)}
+.choice.ng{background:var(--ng-bg);border-color:var(--ng);color:var(--ink)}
+.actionbar{position:sticky;bottom:0;background:var(--bg);padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center}
+.actionbar .fb{flex:1;min-width:0;border:3px solid var(--line);border-radius:12px;padding:6px 10px;font-weight:900;line-height:1.35;font-size:14px}
+.actionbar .fb.ok{background:var(--ok-bg);border-color:var(--ok)}
+.actionbar .fb.ng{background:var(--ng-bg);border-color:var(--ng)}
+.xpchip{display:inline-block;background:var(--xp);color:var(--xp-ink);border-radius:8px;padding:0 8px;margin-left:6px;font-size:13px;animation:pop .45s}
+.actionbar .btn{flex:none}
+.actionbar .btn.grow{flex:1}
+
+/* result */
+.res-h{text-align:center}
+.res-h .big{font-size:56px;line-height:1.1}
+.res-h h1{margin:6px 0 4px}
+.stat{display:flex;gap:10px;margin:14px 0}
+.stat>div{flex:1;text-align:center;border:3px solid var(--line);border-radius:12px;padding:8px 4px;background:var(--bg)}
+.stat .n{font-size:26px;display:block;line-height:1.2}
+.stat .l{font-size:12px;color:var(--ink2)}
+.levelup{background:var(--xp);color:var(--xp-ink);border-color:var(--line);text-align:center;animation:pop .5s}
+.levelup .px{font-size:26px;display:block}
+.newb{display:flex;gap:10px;align-items:center;padding:6px 0}
+.newb .ico{font-size:30px}
+.miss{border-top:2px solid var(--track);padding:10px 0}
+.miss:first-of-type{border-top:0}
+.miss .mq{font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+.miss .ma{font-size:13px;color:var(--ok);font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-4deg)}40%{transform:translateX(8px) rotate(4deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+
+/* ===== v2 追加分 ===== */
+.tabs button{font-size:10px}
+.tabs .ic{width:44px}
+.ttl-now{font-size:12px;font-weight:900;color:var(--boss);line-height:1.3}
+.frz{display:block;font-size:11px;color:var(--ink2);margin-top:2px}
+.raid{border-color:var(--boss)}
+.raid .deck-h .px{color:var(--boss);font-size:15px}
+.dk{display:block}
+.dkt{display:flex;align-items:center;gap:10px}
+.dkt .nm{flex:1;min-width:0}
+.dkx label{margin-top:8px}
+.dt{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:3px solid var(--line);border-radius:10px;padding:8px 11px;margin-bottom:6px}
+
+.dbl{background:var(--xp);color:var(--xp-ink);border:3px solid var(--line);border-radius:10px;padding:2px 10px;margin-bottom:12px;text-align:center;font-size:15px;animation:pop .5s}
+.trait{display:inline-block;background:var(--boss);color:#fff;border-radius:8px;padding:0 8px;font-size:12px;font-family:"Zen Maru Gothic",sans-serif;font-weight:900;margin-right:6px}
+.tdesc{font-size:12px;color:var(--ink2);margin-top:6px}
+.tbar{position:relative;height:24px;border:3px solid var(--line);border-radius:999px;background:var(--track);overflow:hidden;margin-bottom:14px}
+.tbar i{display:block;height:100%;background:var(--ng);transition:width .1s linear}
+.tbar span{position:absolute;right:10px;top:-1px;font-size:14px;color:var(--ink);line-height:18px}
+.sprite.awake{filter:hue-rotate(140deg) saturate(1.6) drop-shadow(0 0 6px var(--boss))}
+.chest{display:flex;gap:12px;align-items:center;border-color:var(--xp);animation:pop .5s;font-weight:900;margin-bottom:14px}
+.chest .ico{font-size:32px}
+.evt{display:flex;gap:10px;align-items:center;padding:5px 0}
+.evt .ico{font-size:24px}
+
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);flex-wrap:wrap}
+.dexg{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin:12px 0}
+.tile{font-family:"DotGothic16","Zen Maru Gothic",monospace;font-size:14px;height:40px;border:2px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;padding:0}
+.tile.lk{background:var(--track);color:var(--ink2);border-style:dashed}
+.tile.sn{background:var(--pri);color:var(--pri-ink)}
+.tile.ms{background:var(--xp);color:var(--xp-ink)}
+.tile.on{outline:3px solid var(--ink);outline-offset:1px}
+.dexd{border:2px dashed var(--line);border-radius:12px;padding:10px 12px;margin-top:4px}
+.dexd .mq{font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+.dexd .ma{color:var(--ok);font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;margin-top:4px}
+.dexd .chips{margin:8px 0 0}
+
+.ttls{display:flex;flex-wrap:wrap;gap:8px}
+.ttl{font:inherit;font-weight:700;font-size:13px;padding:6px 12px;border:3px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);cursor:pointer}
+.ttl[aria-pressed="true"]{background:var(--xp);color:var(--xp-ink)}
+.ttl.lk{border-style:dashed;color:var(--ink2);opacity:.6;cursor:default}
+
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.rg>div{border:3px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;background:var(--card)}
+.rg>div:last-child:nth-child(odd){grid-column:1 / -1}
+.rg .n{font-size:26px;display:block;line-height:1.2}
+.rg .l{font-size:12px;color:var(--ink2);display:block}
+.rg .d{font-size:12px;font-weight:900;display:block}
+.rg .up{color:var(--ok)}
+.rg .dn{color:var(--ng)}
+.wk .col .cnt{font-size:12px;color:var(--ink)}
+.dr{margin-top:12px}
+.dr .deck-h{margin-bottom:4px}
+.dr .bar{height:12px}
+.mgmt{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
+.dk .mgmt{justify-content:flex-start;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+
+/* ================================================================
+   小道具
+   ================================================================ */
+var KEY = 'ankiquest:v1';
+var LTR = function(i){ return String.fromCharCode(65 + i); };
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function pad(n){ return String(n).padStart(2, '0'); }
+function fmtDate(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function todayStr(){ return fmtDate(new Date()); }
+function addDays(s, n){ var a = s.split('-').map(Number); return fmtDate(new Date(a[0], a[1] - 1, a[2] + n)); }
+function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function fmtSec(s){ return (Math.round(s * 10) / 10).toFixed(1) + '秒'; }
+
+/* ================================================================
+   GameCore ― 他のクイズアプリにもそのまま移植できるゲーム層
+   （XP / レベル / 連続日数+フリーズ / バッジ / 称号 / 間隔反復）
+   profile と question オブジェクトを渡すだけで動く。DOMには触れない。
+   ================================================================ */
+var GameCore = (function(){
+  var INTERVALS = [0, 1, 3, 7, 14, 30];           // 箱0〜5の復習間隔（日）
+  var MASTER = 3;                                  // 箱3以上を「習得」とみなす
+  var RANKS = [[1,'研修前夜'],[3,'ポリクリ見習い'],[5,'初期研修医'],[8,'後期研修医'],[12,'専攻医'],[16,'専門医'],[20,'指導医'],[26,'名医']];
+  var RARE_TITLES = [
+    { id:'t1', name:'歩く解剖学書' }, { id:'t2', name:'鬼の記憶力' }, { id:'t3', name:'深夜の暗記王' }, { id:'t4', name:'ミスを恐れぬ者' },
+    { id:'t5', name:'復習の鬼' }, { id:'t6', name:'試験前夜の覇者' }, { id:'t7', name:'伝説の暗記職人' }, { id:'t8', name:'白衣の勇者' }
+  ];
+
+  function levelOf(xp){ return Math.floor(Math.sqrt(Math.max(0, xp) / 50)) + 1; }
+  function base(L){ return 50 * (L - 1) * (L - 1); }
+  function rankOf(L){ var r = RANKS[0][1]; RANKS.forEach(function(x){ if (L >= x[0]) r = x[1]; }); return r; }
+  function daysBetween(a, b){
+    var x = a.split('-').map(Number), y = b.split('-').map(Number);
+    return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 86400000);
+  }
+
+  function newProfile(){
+    return { xp:0, answered:0, correct:0, streak:0, bestStreak:0, lastDay:null, bestCombo:0,
+             bosses:0, perfects:0, questDays:0, revenge:0, daily:{}, badges:{},
+             freezes:1, freezeUsed:0, titles:{}, title:null, raids:0, completes:0, chests:0, pbs:0, revOk:0, twoPhase:0 };
+  }
+  function day(p, t){ return p.daily[t] || (p.daily[t] = { n:0, c:0, xp:0, quest:false, mast:0 }); }
+
+  /* 連続日数：休んだ日はフリーズで自動的に埋める。7日ごとにフリーズ+1（最大3） */
+  function touchDay(p, t){
+    var r = { used:0, granted:false };
+    if (p.lastDay === t) return r;
+    if (!p.lastDay) p.streak = 1;
+    else {
+      var gap = daysBetween(p.lastDay, t) - 1;
+      if (gap <= 0) p.streak += 1;
+      else if ((p.freezes || 0) >= gap){ p.freezes -= gap; r.used = gap; p.freezeUsed = (p.freezeUsed || 0) + gap; p.streak += 1; }
+      else p.streak = 1;
+    }
+    if (p.streak > 1 && p.streak % 7 === 0 && (p.freezes || 0) < 3){ p.freezes = (p.freezes || 0) + 1; r.granted = true; }
+    p.bestStreak = Math.max(p.bestStreak, p.streak);
+    p.lastDay = t;
+    var keys = Object.keys(p.daily).sort();
+    while (keys.length > 60){ delete p.daily[keys.shift()]; }
+    return r;
+  }
+  function curStreak(p, t){
+    if (!p.lastDay) return 0;
+    var gap = daysBetween(p.lastDay, t) - 1;
+    if (gap <= 0) return p.streak;
+    return (p.freezes || 0) >= gap ? p.streak : 0;
+  }
+  function addXp(p, t, n){ p.xp += n; day(p, t).xp += n; }
+
+  /* 間隔反復（ライトナー式）：正解で箱を上げ、不正解で箱0に戻す */
+  function grade(q, ok, t){
+    q.seen = (q.seen || 0) + 1;
+    if (ok){ q.box = Math.min(5, (q.box || 0) + 1); q.due = addDays(t, INTERVALS[q.box]); }
+    else { q.box = 0; q.due = t; q.wrong = (q.wrong || 0) + 1; }
+  }
+  function deckProgress(d){
+    var n = d.questions.length, s = 0;
+    if (!n) return 0;
+    d.questions.forEach(function(q){ s += Math.min(q.box || 0, MASTER); });
+    return s / (MASTER * n);
+  }
+
+  var BADGES = [
+    { id:'first',   icon:'⚔️', name:'初陣',           desc:'はじめて問題に答える',       test:function(p){ return p.answered >= 1; } },
+    { id:'ans100',  icon:'📘', name:'百問ノック',     desc:'累計100問に回答',           test:function(p){ return p.answered >= 100; } },
+    { id:'ans500',  icon:'📚', name:'五百問ノック',   desc:'累計500問に回答',           test:function(p){ return p.answered >= 500; } },
+    { id:'ans1000', icon:'🏛️', name:'千問の書庫',     desc:'累計1000問に回答',          test:function(p){ return p.answered >= 1000; } },
+    { id:'st3',     icon:'🔥', name:'三日坊主卒業',   desc:'3日連続で学習',             test:function(p){ return p.bestStreak >= 3; } },
+    { id:'st7',     icon:'🌋', name:'一週間の炎',     desc:'7日連続で学習',             test:function(p){ return p.bestStreak >= 7; } },
+    { id:'st30',    icon:'☄️', name:'不滅の習慣',     desc:'30日連続で学習',            test:function(p){ return p.bestStreak >= 30; } },
+    { id:'combo10', icon:'⚡', name:'十連撃',         desc:'10問連続で正解',            test:function(p){ return p.bestCombo >= 10; } },
+    { id:'boss1',   icon:'🗡️', name:'ボスハンター',   desc:'ボスを1体倒す',             test:function(p){ return p.bosses >= 1; } },
+    { id:'boss10',  icon:'👑', name:'魔王殺し',       desc:'ボスを10体倒す',            test:function(p){ return p.bosses >= 10; } },
+    { id:'phase2',  icon:'😈', name:'覚醒を超えし者', desc:'覚醒ボスを倒す',            test:function(p){ return p.twoPhase >= 1; } },
+    { id:'perfect', icon:'💎', name:'ノーミス',       desc:'5問以上をミスなしで完走',   test:function(p){ return p.perfects >= 1; } },
+    { id:'quest1',  icon:'📜', name:'クエスト達成',   desc:'デイリークエストを達成',    test:function(p){ return p.questDays >= 1; } },
+    { id:'quest7',  icon:'🗓️', name:'常連冒険者',     desc:'デイリークエストを7日達成', test:function(p){ return p.questDays >= 7; } },
+    { id:'revenge', icon:'🩹', name:'苦手克服',       desc:'間違えた問題を10回リベンジ正解', test:function(p){ return p.revenge >= 10; } },
+    { id:'rev30',   icon:'🔄', name:'逆引き名人',     desc:'逆引きに30問正解',          test:function(p){ return p.revOk >= 30; } },
+    { id:'timeatk', icon:'⏱️', name:'タイムアタッカー', desc:'自己ベストを3回更新',      test:function(p){ return p.pbs >= 3; } },
+    { id:'raid',    icon:'🐲', name:'レイド討伐',     desc:'試験レイドボスを討伐',      test:function(p){ return p.raids >= 1; } },
+    { id:'dex',     icon:'📖', name:'図鑑コンプリート', desc:'デッキの全問題を習得',    test:function(p){ return p.completes >= 1; } },
+    { id:'freeze',  icon:'🧊', name:'命拾い',         desc:'ストリークフリーズが発動',  test:function(p){ return p.freezeUsed >= 1; } },
+    { id:'chest5',  icon:'🎁', name:'宝箱ハンター',   desc:'宝箱を5個開ける',           test:function(p){ return p.chests >= 5; } },
+    { id:'lv5',     icon:'⭐', name:'Lv5到達',        desc:'レベル5に到達',             test:function(p){ return levelOf(p.xp) >= 5; } },
+    { id:'lv10',    icon:'🌟', name:'Lv10到達',       desc:'レベル10に到達',            test:function(p){ return levelOf(p.xp) >= 10; } }
+  ];
+  function check(p, t){
+    var got = [];
+    BADGES.forEach(function(b){
+      if (!p.badges[b.id] && b.test(p)){ p.badges[b.id] = t; got.push(b); }
+    });
+    if (got.length) addXp(p, t, 25 * got.length);   // バッジ1個につき+25XP
+    return got;
+  }
+  return { INTERVALS:INTERVALS, MASTER:MASTER, BADGES:BADGES, RARE_TITLES:RARE_TITLES, levelOf:levelOf, base:base, rankOf:rankOf,
+           daysBetween:daysBetween, newProfile:newProfile, day:day, touchDay:touchDay, curStreak:curStreak, addXp:addXp,
+           grade:grade, deckProgress:deckProgress, check:check };
+})();
+var MASTER = GameCore.MASTER;
+
+/* ================================================================
+   問題の一括入力パーサ
+   Q: / A) B) … / Answer: A, C   （複数正解はカンマ区切り）
+   ================================================================ */
+function parseBulk(text){
+  var lines = String(text || '').replace(/\r/g, '').split('\n');
+  var raw = [], cur = null, last = null;
+  function push(){ if (cur) raw.push(cur); cur = null; }
+  lines.forEach(function(ln){
+    var line = ln.trim(); if (!line) return;
+    var m;
+    if ((m = line.match(/^Q\s*[:：]\s*(.*)$/i))){ push(); cur = { q:m[1], ch:[], lt:[], ans:null }; last = 'q'; return; }
+    if (!cur) return;
+    if (cur.ans === null && (m = line.match(/^([A-Za-z])\s*[)）.．]\s*(.*)$/))){ cur.lt.push(m[1].toUpperCase()); cur.ch.push(m[2]); last = 'c'; return; }
+    if ((m = line.match(/^(?:Answer|Ans|答え|正解|正答)\s*[:：]\s*(.*)$/i))){ cur.ans = m[1]; last = null; return; }
+    if (last === 'q') cur.q += '\n' + line;
+    else if (last === 'c') cur.ch[cur.ch.length - 1] += '\n' + line;
+  });
+  push();
+  var items = [], errors = [];
+  raw.forEach(function(r, idx){
+    var label = (idx + 1) + '問目';
+    if (!r.q.trim()){ errors.push(label + '：問題文が空です'); return; }
+    if (r.ch.length < 2){ errors.push(label + '：選択肢が2つ未満です'); return; }
+    if (r.ans === null || !r.ans.trim()){ errors.push(label + '：Answer: の行がありません'); return; }
+    var ai = [], bad = false;
+    r.ans.split(/[,、，\s]+/).filter(Boolean).forEach(function(l){
+      var k = r.lt.indexOf(l.toUpperCase());
+      if (k < 0) bad = true; else if (ai.indexOf(k) < 0) ai.push(k);
+    });
+    if (bad || !ai.length){ errors.push(label + '：Answer の記号が選択肢にありません'); return; }
+    ai.sort(function(a, b){ return a - b; });
+    items.push({ q:r.q.trim(), choices:r.ch.map(function(c){ return c.trim(); }), answer:ai });
+  });
+  return { items:items, errors:errors };
+}
+
+var SAMPLE = [
+'Q: 第1咽頭弓に由来する軟骨はどれか。',
+'A) メッケル軟骨','B) ライヘルト軟骨','C) 甲状軟骨','D) 輪状軟骨','Answer: A','',
+'Q: 顔面表情筋の由来となる咽頭弓はどれか。',
+'A) 第1咽頭弓','B) 第2咽頭弓','C) 第3咽頭弓','D) 第4咽頭弓','Answer: B','',
+'Q: 下副甲状腺と胸腺の原基が生じる咽頭嚢はどれか。',
+'A) 第1咽頭嚢','B) 第2咽頭嚢','C) 第3咽頭嚢','D) 第4咽頭嚢','Answer: C','',
+'Q: 第1咽頭弓に由来する筋を全て選べ。',
+'A) 咬筋','B) 顎二腹筋前腹','C) 顔面表情筋','D) 茎突舌骨筋','Answer: A, B','',
+'Q: 出生後に卵円孔が閉鎖して残る構造はどれか。',
+'A) 卵円窩','B) 動脈管索','C) 静脈管索','D) 肝円索','Answer: A','',
+'Q: 胎児循環の遺残構造と、その由来の組み合わせとして正しいものを全て選べ。',
+'A) 肝円索 ― 臍静脈','B) 動脈管索 ― 動脈管','C) 静脈管索 ― 静脈管','D) 正中臍索 ― 臍動脈','Answer: A, B, C'
+].join('\n');
+
+var FORMAT_EXAMPLE = [
+'Q: 問題文をここに',
+'A) 選択肢1','B) 選択肢2','C) 選択肢3','D) 選択肢4','Answer: B','',
+'Q: 次の問題文（複数選択の例）',
+'A) ...','B) ...','C) ...','Answer: A, C'
+].join('\n');
+
+/* ================================================================
+   状態・保存
+   ================================================================ */
+var storageOk = true;
+function defaultState(){
+  return { v:2, profile:GameCore.newProfile(), decks:[],
+           settings:{ n:10, goal:20, shuffle:false, theme:'auto', formats:'mix' }, seeded:false };
+}
+function normalize(s){
+  var d = defaultState();
+  if (!s || typeof s !== 'object') return d;
+  d.profile = Object.assign(d.profile, s.profile || {});
+  d.profile.daily = d.profile.daily || {};
+  d.profile.badges = d.profile.badges || {};
+  d.profile.titles = d.profile.titles || {};
+  d.decks = (Array.isArray(s.decks) ? s.decks : []).filter(function(x){ return x && Array.isArray(x.questions); }).map(function(x){
+    return { id:x.id || uid(), name:String(x.name || '無題'), exam:x.exam || null, raidDone:!!x.raidDone, completeDone:!!x.completeDone,
+             archived:!!x.archived, archivedAt:x.archivedAt || null,
+             best:(x.best && typeof x.best === 'object') ? x.best : {},
+             questions:x.questions.filter(function(q){
+      return q && q.q && Array.isArray(q.choices) && Array.isArray(q.answer);
+    }).map(function(q){
+      return { id:q.id || uid(), q:String(q.q), choices:q.choices.map(String), answer:q.answer.slice().sort(function(a, b){ return a - b; }),
+               box:q.box || 0, due:q.due || todayStr(), seen:q.seen || 0, wrong:q.wrong || 0 };
+    }) };
+  });
+  d.settings = Object.assign(d.settings, s.settings || {});
+  d.seeded = !!s.seeded;
+  return d;
+}
+function load(){
+  try { var raw = localStorage.getItem(KEY); if (raw) return normalize(JSON.parse(raw)); } catch (e) { storageOk = false; }
+  return defaultState();
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { storageOk = false; }
+}
+function deckById(id){ return state.decks.filter(function(d){ return d.id === id; })[0]; }
+function addDeckFromItems(name, items){
+  var t = todayStr(), deck = state.decks.filter(function(d){ return d.name === name; })[0], added = 0, dup = 0, unarch = false;
+  if (!deck){ deck = { id:uid(), name:name, exam:null, raidDone:false, completeDone:false, archived:false, archivedAt:null, best:{}, questions:[] }; state.decks.push(deck); }
+  else if (deck.archived){ deck.archived = false; deck.archivedAt = null; unarch = true; }
+  items.forEach(function(it){
+    if (deck.questions.some(function(q){ return q.q === it.q; })){ dup++; return; }
+    deck.questions.push({ id:uid(), q:it.q, choices:it.choices, answer:it.answer, box:0, due:t, seen:0, wrong:0 });
+    added++;
+  });
+  return { added:added, dup:dup, unarch:unarch };
+}
+
+var state = load();
+if (!state.seeded && state.decks.length === 0){
+  addDeckFromItems('サンプル：発生学', parseBulk(SAMPLE).items);
+  state.seeded = true; save();
+}
+var view = 'home';
+var S = null;      // 進行中のセッション
+var ui = { msg:null, importText:'', importName:'', importMsg:null, confirmDel:null, exportText:'', restoreText:'', restoreMsg:null,
+           restoreStage:false, wipeAsk:false, homeShown:false, dexSel:null, archOpen:false, msgKind:null };
+
+function applyTheme(){
+  var th = state.settings.theme, r = document.documentElement;
+  if (th === 'light' || th === 'dark') r.setAttribute('data-theme', th); else r.removeAttribute('data-theme');
+}
+
+/* ================================================================
+   出題
+   ================================================================ */
+var TRAITS = [
+  { id:'normal', name:'ノーマル', desc:'ハート3つで挑む標準のボス',           hearts:3, phases:1, timer:0,  need:1,   bonus:50 },
+  { id:'timer',  name:'俊足',     desc:'1問20秒。時間切れは不正解',           hearts:3, phases:1, timer:20, need:1,   bonus:70 },
+  { id:'sudden', name:'即死',     desc:'ハートは1つ。ミスすると即敗北',       hearts:1, phases:1, timer:0,  need:0.7, bonus:80 },
+  { id:'two',    name:'覚醒',     desc:'HPゲージが2本。倒すと覚醒する',       hearts:3, phases:2, timer:0,  need:0.8, bonus:100 }
+];
+var BOSSES = ['🦠', '🐉', '👾', '🧟', '👹', '🦑', '🐙'];
+
+function buildQueue(deckIds, mode, n){
+  var t = todayStr(), pool = [];
+  state.decks.forEach(function(d){
+    if (deckIds && deckIds.indexOf(d.id) < 0) return;
+    if (!deckIds && d.archived) return;          // クエスト（全デッキ混合）ではアーカイブを除外
+    d.questions.forEach(function(q){ pool.push({ q:q, deckId:d.id, deckName:d.name }); });
+  });
+  function score(x){
+    var q = x.q, isNew = !q.seen, overdue = !isNew && q.due <= t, s = 0;
+    if (mode === 'boss'){ s += (q.wrong || 0) * 3 + ((q.seen && q.box === 0) ? 4 : 0) + (isNew ? 2 : 0) + (overdue ? 3 : 0); }
+    else { s += overdue ? 10 : 0; s += isNew ? 5 : 0; s += (q.wrong || 0); }
+    return s + Math.random() * 3;
+  }
+  pool.forEach(function(x){ x.s = score(x); });
+  pool.sort(function(a, b){ return b.s - a.s; });
+  return shuffle(pool.slice(0, n));
+}
+
+/* 出題形式：mcq(選択式) / reverse(逆引き：答えから問題を選ぶ) */
+function buildVM(it, fmt){
+  var q = it.q;
+  if (fmt === 'reverse'){
+    var others = shuffle(revPool(it)).slice(0, 3);
+    var stems = shuffle([q].concat(others));
+    return { fmt:fmt, text:'次の答えが正解になる問題はどれ？\n\n【答え】' + q.choices[q.answer[0]], tag:'逆引き',
+             choices:stems.map(function(x){ return x.q; }), answer:[stems.indexOf(q)] };
+  }
+  return { fmt:'mcq', text:q.q, tag:q.answer.length > 1 ? '複数選択' : '', choices:q.choices, answer:q.answer };
+}
+/* 逆引きの選択肢候補：同じ答えを持つ別問題は紛らわしいので除外する */
+function revPool(it){
+  var deck = deckById(it.deckId), a = it.q.choices[it.q.answer[0]];
+  return deck.questions.filter(function(x){
+    return x.id !== it.q.id && x.q !== it.q.q && !x.answer.some(function(i){ return x.choices[i] === a; });
+  });
+}
+function canReverse(it){
+  return it.q.answer.length === 1 && !!deckById(it.deckId) && revPool(it).length >= 3;
+}
+function decorate(items, mode){
+  var mix = state.settings.formats === 'mix' && mode !== 'time';
+  items.forEach(function(it){
+    var fmt = (mix && Math.random() < 0.3 && canReverse(it)) ? 'reverse' : 'mcq';
+    it.fmt = fmt; it.vm = buildVM(it, fmt);
+  });
+}
+
+function cur(){ return S.queue[S.i]; }
+function beginQ(){
+  var it = cur(), vm = it.vm;
+  S.sel = new Set(); S.answered = false; S.fx = null; S.chestNow = null; S.timedOut = false; S.awakeNow = false;
+  if (it.fmt === 'mcq'){
+    var o = vm.choices.map(function(_, i){ return i; });
+    S.order = state.settings.shuffle ? shuffle(o) : o;
+  } else {
+    S.order = vm.choices.map(function(_, i){ return i; });
+  }
+  S.tEnd = (S.mode === 'boss' && S.trait.timer) ? Date.now() + S.trait.timer * 1000 : 0;
+}
+
+var tickId = null;
+function stopTick(){ if (tickId){ clearInterval(tickId); tickId = null; } }
+function startTick(){ stopTick(); tickId = setInterval(tick, 100); }
+function elapsed(){ return (Date.now() - S.t0) / 1000 + S.penalty; }
+function tick(){
+  if (!S || view !== 'quiz'){ stopTick(); return; }
+  var now = Date.now(), dt = now - S.lastTick; S.lastTick = now;
+  if (S.quitAsk || S.answered){ if (S.tEnd && S.quitAsk) S.tEnd += dt; S.t0 += dt; return; }
+  if (S.mode === 'time'){ var c = document.getElementById('clock'); if (c) c.textContent = fmtSec(elapsed()); }
+  if (S.tEnd){
+    var rem = S.tEnd - now, bar = document.getElementById('tbar'), num = document.getElementById('tnum');
+    if (bar) bar.style.width = Math.max(0, rem / (S.trait.timer * 1000) * 100) + '%';
+    if (num) num.textContent = Math.max(0, Math.ceil(rem / 1000));
+    if (rem <= 0){ S.tEnd = 0; answer(true); }
+  }
+}
+function endSession(){ stopTick(); S = null; }
+
+function startSession(deckIds, mode){
+  var n = state.settings.n, trait = null, phases = 1;
+  if (mode === 'boss'){ trait = TRAITS[Math.floor(Math.random() * TRAITS.length)]; phases = trait.phases; }
+  var queue = buildQueue(deckIds, mode, phases === 2 ? Math.ceil(n * 1.5) : n);
+  if (!queue.length){ ui.msg = '出題できる問題がありません。「追加」タブから問題を読み込んでください。'; view = 'home'; render(); return; }
+  decorate(queue, mode);
+  var name = queue[0].deckName, h = 0, k;
+  for (k = 0; k < name.length; k++) h = (h * 31 + name.charCodeAt(k)) >>> 0;
+  S = { mode:mode, deckIds:deckIds, queue:queue, i:0, sel:new Set(), answered:false, combo:0, bestCombo:0, correct:0, answeredN:0,
+        missed:[], trait:trait, heartsMax:trait ? trait.hearts : 3, hearts:trait ? trait.hearts : 3,
+        bossMax:100 * phases, need:trait ? trait.need : 1, bossHp:100 * phases, shownDisp:100,
+        bossName:name, boss:BOSSES[h % BOSSES.length], startXp:state.profile.xp, newBadges:[], events:[],
+        fx:null, lastGain:0, lastOk:false, quitAsk:false, questDone:false, outcome:null, bonus:0, perfect:false,
+        xpMul:Math.random() < 0.2 ? 2 : 1, penalty:0, t0:Date.now(), lastTick:Date.now(), tEnd:0, chestNow:null, timedOut:false, awakeNow:false, order:[] };
+  beginQ();
+  view = 'quiz'; window.scrollTo(0, 0); render();
+  if ((mode === 'boss' && trait.timer) || mode === 'time') startTick(); else stopTick();
+}
+
+function openChest(){
+  var p = state.profile, t = todayStr(), r = Math.random(), ev = null;
+  if (r < 0.10){
+    var un = GameCore.RARE_TITLES.filter(function(x){ return !p.titles[x.id]; });
+    if (un.length){ var pick = un[Math.floor(Math.random() * un.length)]; p.titles[pick.id] = t; ev = { icon:'👑', text:'宝箱：レア称号「' + pick.name + '」を入手！' }; }
+  }
+  if (!ev && r < 0.30 && (p.freezes || 0) < 3){ p.freezes = (p.freezes || 0) + 1; ev = { icon:'🧊', text:'宝箱：ストリークフリーズを入手（所持' + p.freezes + '）' }; }
+  if (!ev){ var xp = 20 + Math.floor(Math.random() * 41); GameCore.addXp(p, t, xp); ev = { icon:'🪙', text:'宝箱：+' + xp + ' XP' }; }
+  p.chests++; S.chestNow = ev; S.events.push(ev);
+}
+
+function answer(timedOut){
+  if (!S || S.answered) return;
+  var it = cur(), q = it.q, vm = it.vm, p = state.profile, t = todayStr();
+  var sel = Array.from(S.sel).sort(function(a, b){ return a - b; });
+  var ok = sel.length === vm.answer.length && sel.every(function(v, i){ return v === vm.answer[i]; });
+  var tr = GameCore.touchDay(p, t);
+  if (tr.used) S.events.push({ icon:'🧊', text:'ストリークフリーズを' + tr.used + '個使って連続日数を守りました' });
+  if (tr.granted) S.events.push({ icon:'🧊', text:'連続' + p.streak + '日ボーナス：フリーズ+1' });
+  var dd = GameCore.day(p, t), gain, wasRevenge = (q.wrong || 0) > 0 && q.box === 0, wasMast = q.box >= MASTER;
+  p.answered++; dd.n++; S.answeredN++; S.answered = true; S.timedOut = !!timedOut;
+  GameCore.grade(q, ok, t);
+  if (!wasMast && q.box >= MASTER) dd.mast = (dd.mast || 0) + 1;
+  if (ok){
+    p.correct++; dd.c++; S.correct++; S.combo++;
+    p.bestCombo = Math.max(p.bestCombo, S.combo); S.bestCombo = Math.max(S.bestCombo, S.combo);
+    gain = 10 + Math.min(S.combo, 10) + (it.fmt === 'reverse' ? 2 : 0);
+    if (it.fmt === 'reverse') p.revOk++;
+    if (wasRevenge) p.revenge++;
+    if (S.mode === 'boss'){
+      var before = S.bossHp, dmg = Math.ceil(S.bossMax / (S.queue.length * S.need)) * (S.combo >= 5 ? 1.5 : 1);
+      S.bossHp = Math.max(0, S.bossHp - dmg);
+      if (S.trait.phases === 2 && before > 100 && S.bossHp <= 100 && S.bossHp > 0) S.awakeNow = true;
+    }
+    if (Math.random() < 0.07) openChest();
+  } else {
+    gain = 2; S.combo = 0;
+    if (S.mode === 'boss') S.hearts--;
+    if (S.mode === 'time') S.penalty += 5;
+    S.missed.push({ q:q.q, ans:q.answer.map(function(i){ return LTR(i) + ') ' + q.choices[i]; }).join('\n') });
+  }
+  gain *= S.xpMul;
+  GameCore.addXp(p, t, gain);
+  if (!dd.quest && dd.n >= state.settings.goal){ dd.quest = true; p.questDays++; GameCore.addXp(p, t, 30); S.questDone = true; }
+
+  var deck = deckById(it.deckId);
+  if (deck && !wasMast && q.box >= MASTER && deck.questions.every(function(x){ return x.box >= MASTER; })){
+    if (deck.questions.length >= 5 && !deck.completeDone){
+      deck.completeDone = true; p.completes++; GameCore.addXp(p, t, 60);
+      S.events.push({ icon:'📖', text:'図鑑コンプリート「' + deck.name + '」 +60 XP' });
+    }
+    if (deck.exam && !deck.raidDone && !deck.archived && t <= deck.exam){
+      deck.raidDone = true; p.raids++; GameCore.addXp(p, t, 100);
+      S.events.push({ icon:'🐲', text:'試験レイドボス討伐「' + deck.name + '」 +100 XP' });
+    }
+  }
+  S.newBadges = S.newBadges.concat(GameCore.check(p, t));
+  S.lastGain = gain; S.lastOk = ok; S.fx = ok ? 'hit' : 'hurt';
+  save(); render();
+}
+
+function nextQ(){
+  var over = S.mode === 'boss' && (S.bossHp <= 0 || S.hearts <= 0);
+  if (over || S.i >= S.queue.length - 1){ finish(); return; }
+  S.i++; beginQ(); window.scrollTo(0, 0); render();
+}
+
+function finish(){
+  stopTick();
+  var p = state.profile, t = todayStr(), bonus = 0;
+  if (S.mode === 'boss'){
+    if (S.bossHp <= 0){ S.outcome = 'win'; p.bosses++; bonus += S.trait.bonus; if (S.trait.phases === 2) p.twoPhase++; }
+    else if (S.hearts <= 0) S.outcome = 'lose';
+    else S.outcome = 'escape';
+  } else {
+    S.outcome = 'done'; bonus += 20;
+    if (S.mode === 'time'){
+      S.rawSec = Math.round((Date.now() - S.t0) / 100) / 10;
+      S.finalSec = Math.round(elapsed() * 10) / 10;
+      var deck = S.deckIds && S.deckIds.length === 1 ? deckById(S.deckIds[0]) : null;
+      if (deck){
+        deck.best = deck.best || {};
+        var key = String(S.queue.length), prev = deck.best[key];
+        S.prevBest = prev || null;
+        if (!prev || S.finalSec < prev){ deck.best[key] = S.finalSec; p.pbs++; S.newPB = true; bonus += prev ? 40 : 20; }
+      }
+    }
+  }
+  if (S.missed.length === 0 && S.answeredN >= 5 && S.outcome !== 'lose'){ p.perfects++; bonus += 30; S.perfect = true; }
+  GameCore.addXp(p, t, bonus); S.bonus = bonus;
+  S.newBadges = S.newBadges.concat(GameCore.check(p, t));
+  S.gain = p.xp - S.startXp;
+  view = 'result'; save(); window.scrollTo(0, 0); render();
+}
+
+/* ================================================================
+   描画
+   ================================================================ */
+function bar(cls, from, to){
+  from = Math.max(0, Math.min(100, from)); to = Math.max(0, Math.min(100, to));
+  return '<div class="bar ' + cls + '"><i style="width:' + from + '%" data-w="' + to + '"></i></div>';
+}
+function tabs(){
+  var T = [['home','🏠','ホーム'], ['dex','📖','図鑑'], ['add','➕','追加'], ['badges','🏅','バッジ'], ['settings','⚙️','設定']];
+  return '<nav class="tabs" aria-label="メニュー"><div class="in">' + T.map(function(x){
+    var on = view === x[0] || (x[0] === 'home' && view === 'report');
+    return '<button data-act="tab" data-tab="' + x[0] + '"' + (on ? ' aria-current="page"' : '') + '><span class="ic">' + x[1] + '</span>' + x[2] + '</button>';
+  }).join('') + '</div></nav>';
+}
+function weekStats(p, t, off){
+  var n = 0, c = 0, xp = 0, days = 0, mast = 0, k;
+  for (k = 0; k < 7; k++){
+    var d = p.daily[addDays(t, -(k + 7 * off))];
+    if (d){ n += d.n; c += d.c; xp += d.xp; mast += d.mast || 0; if (d.n > 0) days++; }
+  }
+  return { n:n, c:c, xp:xp, days:days, mast:mast, acc:n ? Math.round(c / n * 100) : null };
+}
+function delta(cur, prev, unit){
+  if (cur === null || prev === null) return '';
+  var d = cur - prev;
+  if (d > 0) return '<span class="d up">先週比 ▲' + d + unit + '</span>';
+  if (d < 0) return '<span class="d dn">先週比 ▼' + (-d) + unit + '</span>';
+  return '<span class="d">先週と同じ</span>';
+}
+
+function msgHtml(){
+  if (!ui.msg) return '';
+  var h = '<div class="msg ' + (ui.msgKind || 'ng') + '" role="status">' + esc(ui.msg) + '</div><div style="height:16px"></div>';
+  ui.msg = null; ui.msgKind = null;
+  return h;
+}
+function delBtns(d){
+  var id = esc(d.id);
+  return ui.confirmDel === d.id
+    ? '<button class="btn sm" data-act="delDeckYes" data-id="' + id + '" style="border-color:var(--ng);color:var(--ng)">本当に削除</button><button class="btn sm" data-act="delDeckNo">やめる</button>'
+    : '<button class="btn sm" data-act="delDeck" data-id="' + id + '">削除</button>';
+}
+function archBtn(d){
+  return d.archived
+    ? '<button class="btn sm" data-act="unarchive" data-id="' + esc(d.id) + '">戻す</button>'
+    : '<button class="btn sm" data-act="archive" data-id="' + esc(d.id) + '">アーカイブ</button>';
+}
+function mgmt(d, lead){ return '<div class="mgmt">' + (ui.confirmDel === d.id ? '' : (lead || '') + archBtn(d)) + delBtns(d) + '</div>'; }
+
+function viewHome(){
+  var p = state.profile, t = todayStr(), goal = state.settings.goal;
+  var L = GameCore.levelOf(p.xp), lo = GameCore.base(L), hi = GameCore.base(L + 1);
+  var pct = Math.round((p.xp - lo) / (hi - lo) * 100);
+  var streak = GameCore.curStreak(p, t);
+  var dd = p.daily[t] || { n:0 }, done = dd.n >= goal;
+  var total = state.decks.reduce(function(a, d){ return a + (d.archived ? 0 : d.questions.length); }, 0);
+  var ttl = p.title && p.titles[p.title] ? GameCore.RARE_TITLES.filter(function(x){ return x.id === p.title; })[0] : null;
+  var h = '<header class="top"><h1 class="px">暗記クエスト</h1></header>';
+  if (!storageOk) h += '<div class="note">この環境ではブラウザ保存が使えないため、閉じると進捗が消えます。設定の「書き出す」で控えを残してください。</div>';
+  h += msgHtml();
+
+  h += '<section class="win"><div class="hero-row">' +
+    '<div class="lvbox"><span class="lvl px">Lv</span><span class="lvn px">' + L + '</span></div>' +
+    '<div class="hero-mid"><div class="rank">' + esc(GameCore.rankOf(L)) + '</div>' +
+    (ttl ? '<div class="ttl-now">『' + esc(ttl.name) + '』</div>' : '') +
+    '<div class="xptxt"><span class="px">' + p.xp.toLocaleString('ja-JP') + '</span> XP</div></div>' +
+    '<div class="streak"><span class="fire">🔥</span><span class="px sn">' + streak + '</span><span class="sl">日連続</span><span class="frz" title="ストリークフリーズ">🧊×' + (p.freezes || 0) + '</span></div></div>' +
+    bar('', ui.homeShown ? pct : 0, pct) +
+    '<div class="xpsub">次のレベルまで ' + (hi - p.xp).toLocaleString('ja-JP') + ' XP</div></section>';
+  ui.homeShown = true;
+
+  h += '<section class="win quest' + (done ? ' done' : '') + '"><div class="qh"><h2>今日のクエスト</h2><span class="reward px">' + (done ? '達成' : '+30 XP') + '</span></div>' +
+    '<p class="sub">' + goal + '問に答える（復習期限の問題が優先で出ます）</p>' +
+    bar('ok', 0, Math.min(100, dd.n / goal * 100)) +
+    '<div class="qn"><span class="px">' + Math.min(dd.n, goal) + ' / ' + goal + '</span></div>' +
+    '<button class="btn pri wide" data-act="startQuest"' + (total ? '' : ' disabled') + '>' + (done ? 'もっと解く' : 'クエストに出発') + '</button></section>';
+
+  var raids = state.decks.filter(function(d){ return d.exam && d.questions.length && !d.archived; }).sort(function(a, b){ return a.exam < b.exam ? -1 : 1; });
+  if (raids.length){
+    h += '<h3>試験レイド</h3>';
+    raids.forEach(function(d){
+      var left = GameCore.daysBetween(t, d.exam), hp = Math.round((1 - GameCore.deckProgress(d)) * 100), rem = 0;
+      d.questions.forEach(function(q){ rem += MASTER - Math.min(q.box || 0, MASTER); });
+      var when = left < 0 ? '試験日を過ぎました' : left === 0 ? '試験当日' : 'あと' + left + '日';
+      h += '<section class="win raid"><div class="deck-h"><h2>🐲 ' + esc(d.name) + '</h2><span class="px">' + when + '</span></div>' + bar('boss', hp, hp) +
+        '<div class="chips"><span class="chip">残りHP ' + hp + '%</span>' +
+        (!d.raidDone && left >= 0 && rem ? '<span class="chip due">目安 1日' + Math.ceil(rem / (left + 1)) + '回正解</span>' : '') + '</div>';
+      if (d.raidDone) h += '<div class="msg ok">🏆 討伐済み</div>';
+      else if (left >= 0) h += '<button class="btn boss wide" data-act="startDeck" data-id="' + esc(d.id) + '" data-mode="normal">討伐に向かう</button>';
+      if (left < 0) h += '<button class="btn wide" style="margin-top:12px" data-act="archive" data-id="' + esc(d.id) + '">試験おつかれさま。アーカイブする</button>';
+      h += '</section>';
+    });
+  }
+
+  var days = [], k;
+  for (k = 6; k >= 0; k--){
+    var s = addDays(t, -k), a = s.split('-').map(Number);
+    days.push({ n:(p.daily[s] || {}).n || 0, lab:'日月火水木金土'.charAt(new Date(a[0], a[1] - 1, a[2]).getDay()), today:k === 0 });
+  }
+  var mx = Math.max.apply(null, [goal, 1].concat(days.map(function(d){ return d.n; })));
+  h += '<section class="win"><div class="qh"><h2>この7日間</h2><button class="btn sm" data-act="tab" data-tab="report">週間レポート</button></div><div class="wk">' + days.map(function(d){
+    return '<div class="col' + (d.today ? ' today' : '') + '"><div class="stick" style="height:' + Math.round(d.n / mx * 58) + 'px" title="' + d.n + '問"></div><span>' + d.lab + '</span></div>';
+  }).join('') + '</div></section>';
+
+  var active = state.decks.filter(function(d){ return !d.archived; });
+  var arch = state.decks.filter(function(d){ return d.archived; });
+  h += '<h3>デッキ</h3>';
+  if (!active.length){
+    h += '<div class="win empty"><p>' + (arch.length ? '使えるデッキがありません。アーカイブから戻すか、問題を追加しましょう。' : 'まだデッキがありません。問題を読み込んで冒険を始めよう。') + '</p><button class="btn pri" data-act="tab" data-tab="add">問題を追加する</button></div>';
+  }
+  active.forEach(function(d){
+    var n = d.questions.length, due = 0, fresh = 0, mast = 0;
+    d.questions.forEach(function(q){ if (!q.seen) fresh++; else if (q.due <= t) due++; if (q.box >= MASTER) mast++; });
+    var bk = d.best && d.best[String(Math.min(state.settings.n, n))];
+    h += '<section class="win deck"><div class="deck-h"><h2>' + esc(d.name) + '</h2><span class="sub">習得 ' + mast + ' / ' + n + '</span></div>' +
+      bar('ok', 0, n ? mast / n * 100 : 0) +
+      '<div class="chips"><span class="chip">全' + n + '問</span>' +
+      (due ? '<span class="chip due">復習 ' + due + '</span>' : '') +
+      (fresh ? '<span class="chip">未学習 ' + fresh + '</span>' : '') +
+      (bk ? '<span class="chip">⏱ ベスト ' + bk + '秒</span>' : '') + '</div>' +
+      '<div class="row"><button class="btn pri" data-act="startDeck" data-id="' + esc(d.id) + '" data-mode="normal"' + (n ? '' : ' disabled') + '>通常</button>' +
+      '<button class="btn boss" data-act="startDeck" data-id="' + esc(d.id) + '" data-mode="boss"' + (n ? '' : ' disabled') + '>ボス戦</button>' +
+      '<button class="btn" data-act="startDeck" data-id="' + esc(d.id) + '" data-mode="time"' + (n ? '' : ' disabled') + '>タイム</button></div>' +
+      mgmt(d) + '</section>';
+  });
+  if (arch.length){
+    h += '<section class="win"><div class="qh"><h2>アーカイブ（' + arch.length + '）</h2><button class="btn sm" data-act="archToggle">' + (ui.archOpen ? '閉じる' : '開く') + '</button></div>' +
+      '<p class="sub">試験が終わったデッキです。クエスト・レイド・レポートの対象外になります。</p>';
+    if (ui.archOpen){
+      arch.forEach(function(d){
+        var n = d.questions.length, mast = 0;
+        d.questions.forEach(function(q){ if (q.box >= MASTER) mast++; });
+        h += '<div class="dk"><div class="dkt"><div class="nm">' + esc(d.name) + '<div class="ct">' + n + '問　習得 ' + mast + ' / ' + n + (d.archivedAt ? '　' + esc(d.archivedAt) + ' にアーカイブ' : '') + '</div></div></div>' +
+          mgmt(d, '<button class="btn sm" data-act="startDeck" data-id="' + esc(d.id) + '" data-mode="normal"' + (n ? '' : ' disabled') + '>復習する</button>') + '</div>';
+      });
+    }
+    h += '</section>';
+  }
+  return h;
+}
+
+function viewDex(){
+  var t = todayStr();
+  var h = '<header class="top"><h1>図鑑</h1></header>';
+  if (!state.decks.length) return h + '<div class="win empty"><p>デッキを追加すると、ここに問題が並びます。</p><button class="btn pri" data-act="tab" data-tab="add">問題を追加する</button></div>';
+  h += '<div class="legend" style="margin-bottom:14px"><span>？ 未発見</span><span>数字 発見済み</span><span>★ 習得</span></div>';
+  var shownArch = false;
+  state.decks.filter(function(d){ return !d.archived; }).concat(state.decks.filter(function(d){ return d.archived; })).forEach(function(d){
+    if (d.archived && !shownArch){ shownArch = true; h += '<h3>アーカイブ済み</h3>'; }
+    var n = d.questions.length, seen = 0, mast = 0;
+    d.questions.forEach(function(q){ if (q.seen) seen++; if (q.box >= MASTER) mast++; });
+    h += '<section class="win"><div class="deck-h"><h2>' + esc(d.name) + '</h2><span class="sub">発見 ' + seen + ' / 習得 ' + mast + ' / 全' + n + '</span></div>' + bar('ok', 0, n ? mast / n * 100 : 0);
+    if (n && mast === n) h += '<div class="msg ok" style="margin:10px 0 0">📖 コンプリート！ 全問題を習得しました</div>';
+    h += '<div class="dexg">' + d.questions.map(function(q, i){
+      var st = !q.seen ? 'lk' : (q.box >= MASTER ? 'ms' : 'sn');
+      var on = ui.dexSel === d.id + '|' + q.id;
+      return '<button class="tile ' + st + (on ? ' on' : '') + '" data-act="dexSel" data-d="' + esc(d.id) + '" data-q="' + esc(q.id) + '" aria-label="問題' + (i + 1) + '">' + (st === 'lk' ? '？' : st === 'ms' ? '★' : (i + 1)) + '</button>';
+    }).join('') + '</div>';
+    d.questions.forEach(function(q, i){
+      if (ui.dexSel !== d.id + '|' + q.id) return;
+      if (!q.seen) h += '<div class="dexd"><p class="sub">まだ出会っていない問題です。出題されると図鑑に登録されます。</p></div>';
+      else {
+        h += '<div class="dexd"><div class="mq">' + esc(q.q) + '</div><div class="ma">' + esc(q.answer.map(function(a){ return LTR(a) + ') ' + q.choices[a]; }).join('\n')) + '</div>' +
+          '<div class="chips"><span class="chip">' + (q.box >= MASTER ? '★ 習得' : '習熟 ' + q.box + ' / ' + MASTER) + '</span><span class="chip">回答 ' + q.seen + '回</span>' +
+          (q.wrong ? '<span class="chip">誤答 ' + q.wrong + '回</span>' : '') + '<span class="chip' + (q.due <= t ? ' due' : '') + '">次回 ' + (q.due <= t ? '今日' : esc(q.due)) + '</span></div></div>';
+      }
+    });
+    h += '</section>';
+  });
+  return h;
+}
+
+function viewAdd(){
+  var h = '<header class="top"><h1>問題を追加</h1></header>' + msgHtml();
+  h += '<section class="win"><label for="dn">デッキ名（同じ名前なら追記）</label>' +
+    '<input id="dn" type="text" data-bind="importName" value="' + esc(ui.importName) + '" placeholder="例：発生学">' +
+    '<label for="it">問題テキスト</label>' +
+    '<textarea id="it" data-bind="importText" placeholder="' + esc(FORMAT_EXAMPLE) + '">' + esc(ui.importText) + '</textarea>' +
+    '<div class="row"><button class="btn" data-act="fillSample">書式の例を入れる</button><button class="btn pri" data-act="doImportQ">読み込む</button></div>';
+  if (ui.importMsg){
+    h += '<div class="msg ' + (ui.importMsg.ok ? 'ok' : 'ng') + '" role="status">' + esc(ui.importMsg.text);
+    if (ui.importMsg.errs && ui.importMsg.errs.length) h += '<ul>' + ui.importMsg.errs.slice(0, 8).map(function(e){ return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+    h += '</div>';
+  }
+  h += '</section>';
+  h += '<section class="win hint"><h2>書式</h2><p class="sub" style="margin-top:6px">' +
+    '<code>Q:</code> が問題、<code>A)</code> <code>B)</code> … が選択肢、<code>Answer:</code> が正解です。複数選択は <code>Answer: A, C</code> のようにカンマで区切ります。問題の間は空行があると読みやすくなります（なくても読み込めます）。' +
+    '</p></section>';
+  function row(d){
+    var r = '<div class="dk"><div class="dkt"><div class="nm">' + esc(d.name) + '<div class="ct">' + d.questions.length + '問</div></div></div>' + mgmt(d);
+    if (!d.archived) r += '<div class="dkx"><label for="ex-' + esc(d.id) + '">試験日（レイドボス）</label><input id="ex-' + esc(d.id) + '" type="date" class="dt" data-exam="' + esc(d.id) + '" value="' + esc(d.exam || '') + '"></div>';
+    return r + '</div>';
+  }
+  var act = state.decks.filter(function(d){ return !d.archived; }), arc = state.decks.filter(function(d){ return d.archived; });
+  h += '<h3>デッキの管理</h3><section class="win">';
+  if (!state.decks.length) h += '<p class="sub">デッキはまだありません。</p>';
+  else if (!act.length) h += '<p class="sub">使用中のデッキはありません。</p>';
+  act.forEach(function(d){ h += row(d); });
+  h += '</section>';
+  if (arc.length){
+    h += '<h3>アーカイブ済み</h3><section class="win"><p class="sub" style="margin-bottom:6px">「戻す」でホームのデッキ一覧に戻ります。</p>';
+    arc.forEach(function(d){ h += row(d); });
+    h += '</section>';
+  }
+  return h;
+}
+
+function viewBadges(){
+  var p = state.profile, got = GameCore.BADGES.filter(function(b){ return p.badges[b.id]; }).length;
+  var tOwned = GameCore.RARE_TITLES.filter(function(x){ return p.titles[x.id]; }).length;
+  var h = '<header class="top"><h1>バッジ</h1><span class="px">' + got + ' / ' + GameCore.BADGES.length + '</span></header>';
+  h += '<section class="win"><div class="qh"><h2>称号</h2><span class="px">' + tOwned + ' / ' + GameCore.RARE_TITLES.length + '</span></div>' +
+    '<p class="sub" style="margin-bottom:10px">宝箱から見つかることがあります。タップでホームに表示できます。</p><div class="ttls">' +
+    GameCore.RARE_TITLES.map(function(x){
+      return p.titles[x.id]
+        ? '<button class="ttl" data-act="equip" data-id="' + x.id + '" aria-pressed="' + (p.title === x.id) + '">' + esc(x.name) + '</button>'
+        : '<span class="ttl lk">？？？</span>';
+    }).join('') + '</div></section>';
+  h += '<div class="bgrid">';
+  GameCore.BADGES.forEach(function(b){
+    var d = p.badges[b.id];
+    h += '<div class="win' + (d ? '' : ' lock') + '"><div class="ico">' + (d ? b.icon : '🔒') + '</div><div class="bn">' + esc(b.name) + '</div><div class="bd">' + esc(b.desc) + '</div>' +
+      (d ? '<div class="when">' + esc(d) + ' 獲得</div>' : '') + '</div>';
+  });
+  return h + '</div>';
+}
+
+function viewReport(){
+  var p = state.profile, t = todayStr(), a = weekStats(p, t, 0), b = weekStats(p, t, 1), k;
+  var h = '<header class="top"><h1>週間レポート</h1><button class="btn sm" data-act="tab" data-tab="home">ホームへ</button></header>';
+  var line;
+  if (!a.n) line = '直近7日間の回答はまだありません。まずは1問から始めましょう。';
+  else {
+    line = '直近7日間で' + a.n + '問に回答し、正答率は' + a.acc + '%でした。';
+    if (b.n) line += a.n >= b.n ? '前の週より' + (a.n - b.n) + '問多いペースです。' : '前の週より' + (b.n - a.n) + '問少なめでした。';
+    if (a.days >= 5) line += '学習日数は' + a.days + '日で、リズムができています。';
+  }
+  h += '<section class="win"><p>' + esc(line) + '</p></section>';
+  h += '<div class="rg">' +
+    '<div><span class="n px">' + a.n + '</span><span class="l">回答数</span>' + delta(a.n, b.n, '問') + '</div>' +
+    '<div><span class="n px">' + (a.acc === null ? '—' : a.acc + '%') + '</span><span class="l">正答率</span>' + delta(a.acc, b.acc, 'pt') + '</div>' +
+    '<div><span class="n px">' + a.xp + '</span><span class="l">獲得XP</span>' + delta(a.xp, b.xp, '') + '</div>' +
+    '<div><span class="n px">' + a.days + ' / 7</span><span class="l">学習日数</span>' + delta(a.days, b.days, '日') + '</div>' +
+    '<div><span class="n px">' + a.mast + '</span><span class="l">新しく習得した問題</span>' + delta(a.mast, b.mast, '問') + '</div></div>';
+
+  var days = [];
+  for (k = 6; k >= 0; k--){
+    var s = addDays(t, -k), ar = s.split('-').map(Number), d = p.daily[s] || { n:0, c:0 };
+    days.push({ n:d.n, c:d.c, lab:'日月火水木金土'.charAt(new Date(ar[0], ar[1] - 1, ar[2]).getDay()), today:k === 0 });
+  }
+  var mx = Math.max.apply(null, [1].concat(days.map(function(x){ return x.n; })));
+  h += '<section class="win"><h2>日ごとの回答数</h2><div class="wk" style="height:110px">' + days.map(function(x){
+    return '<div class="col' + (x.today ? ' today' : '') + '"><span class="cnt px">' + x.n + '</span><div class="stick" style="height:' + Math.round(x.n / mx * 62) + 'px"></div><span>' + x.lab + '</span></div>';
+  }).join('') + '</div></section>';
+
+  var weak = [];
+  state.decks.forEach(function(d){ if (d.archived) return; d.questions.forEach(function(q){ if (q.wrong > 0) weak.push({ q:q, deck:d.name }); }); });
+  weak.sort(function(x, y){ return (y.q.wrong - x.q.wrong) || (x.q.box - y.q.box); });
+  h += '<section class="win"><h2>苦手ランキング</h2>';
+  if (!weak.length) h += '<p class="sub" style="margin-top:6px">まだ間違えた問題がありません。</p>';
+  weak.slice(0, 5).forEach(function(x, i){
+    h += '<div class="miss"><div class="mq">' + (i + 1) + '. ' + esc(x.q.q) + '</div><div class="ct sub">' + esc(x.deck) + '　誤答 ' + x.q.wrong + '回　習熟 ' + Math.min(x.q.box, MASTER) + ' / ' + MASTER + '</div></div>';
+  });
+  h += '</section>';
+
+  var ranks = state.decks.filter(function(d){ return d.questions.length && !d.archived; }).map(function(d){ return { name:d.name, v:Math.round(GameCore.deckProgress(d) * 100) }; })
+    .sort(function(x, y){ return x.v - y.v; });
+  h += '<section class="win"><h2>デッキ別の習熟度（低い順）</h2>';
+  if (!ranks.length) h += '<p class="sub" style="margin-top:6px">デッキがありません。</p>';
+  ranks.forEach(function(x){
+    h += '<div class="dr"><div class="deck-h"><span>' + esc(x.name) + '</span><span class="px">' + x.v + '%</span></div>' + bar('pri', 0, x.v) + '</div>';
+  });
+  return h + '</section>';
+}
+
+function seg(items, cur, act){
+  return '<div class="seg">' + items.map(function(x){
+    return '<button data-act="' + act + '" data-v="' + x[0] + '" aria-pressed="' + (String(cur) === String(x[0])) + '">' + x[1] + '</button>';
+  }).join('') + '</div>';
+}
+function viewSettings(){
+  var s = state.settings;
+  var h = '<header class="top"><h1>設定</h1></header><section class="win">';
+  h += '<label>1回の出題数</label>' + seg([[5,'5問'],[10,'10問'],[20,'20問']], s.n, 'setN');
+  h += '<label>出題形式</label>' + seg([['mcq','選択式のみ'],['mix','逆引きを混ぜる']], s.formats, 'setFormats') +
+    '<p class="sub" style="margin:-6px 0 14px">逆引きは、答えを見て、それが正解になる問題を選ぶ形式です（タイムアタックでは出ません）。</p>';
+  h += '<label>デイリークエストの目標</label>' + seg([[10,'10問'],[20,'20問'],[30,'30問'],[50,'50問']], s.goal, 'setGoal');
+  h += '<label>選択肢をシャッフル</label>' + seg([['on','オン'],['off','オフ']], s.shuffle ? 'on' : 'off', 'setShuffle');
+  h += '<label>テーマ</label>' + seg([['auto','自動'],['light','ライト'],['dark','ダーク']], s.theme, 'setTheme') + '</section>';
+
+  h += '<h3>バックアップ</h3><section class="win"><p class="sub" style="margin-bottom:10px">進捗はこの端末のブラウザに保存されます。機種変更やブラウザ変更の前に書き出しておくと安心です。</p>' +
+    '<button class="btn wide" data-act="exportData">書き出す（コピー）</button>';
+  if (ui.exportText) h += '<textarea id="ex" readonly style="margin-top:12px;min-height:110px">' + esc(ui.exportText) + '</textarea>';
+  h += '<label for="rs" style="margin-top:14px">読み込む（書き出したテキストを貼り付け）</label>' +
+    '<textarea id="rs" data-bind="restoreText" style="min-height:90px" placeholder="{...}">' + esc(ui.restoreText) + '</textarea>';
+  if (ui.restoreStage) h += '<div class="row"><button class="btn sm" data-act="restoreYes" style="border-color:var(--ng);color:var(--ng)">現在のデータを置き換える</button><button class="btn sm" data-act="restoreNo">やめる</button></div>';
+  else h += '<button class="btn wide" data-act="restore">読み込む</button>';
+  if (ui.restoreMsg) h += '<div class="msg ' + (ui.restoreMsg.ok ? 'ok' : 'ng') + '" role="status">' + esc(ui.restoreMsg.text) + '</div>';
+  h += '</section>';
+
+  h += '<h3>データ</h3><section class="win"><p class="sub" style="margin-bottom:10px">進捗・デッキ・バッジをすべて消します。元に戻せません。</p>';
+  if (ui.wipeAsk) h += '<div class="row"><button class="btn" data-act="wipeYes" style="border-color:var(--ng);color:var(--ng)">本当にすべて消す</button><button class="btn" data-act="wipeNo">やめる</button></div>';
+  else h += '<button class="btn wide" data-act="wipe">すべて消す</button>';
+  return h + '</section>';
+}
+
+function hpDisp(){ return S.trait.phases === 2 ? (S.bossHp > 100 ? S.bossHp - 100 : S.bossHp) : S.bossHp; }
+
+function viewQuiz(){
+  var it = cur(), vm = it.vm, total = S.queue.length, boss = S.mode === 'boss', h = '';
+  var multi = it.fmt === 'mcq' && vm.answer.length > 1;
+  h += '<div class="qtop"><button class="btn sm" data-act="quit">やめる</button><div class="qprog px">' + (S.i + 1) + ' / ' + total + '</div>';
+  h += S.mode === 'time'
+    ? '<div class="combo px" style="color:var(--ink)"><span id="clock">' + fmtSec(elapsed()) + '</span></div>'
+    : '<div class="combo px">' + (S.combo >= 2 ? '🔥' + S.combo + '連続' : '') + '</div>';
+  h += '</div>';
+  if (S.xpMul > 1) h += '<div class="dbl px">✨ ダブルXPタイム ×' + S.xpMul + '</div>';
+  if (S.quitAsk) h += '<div class="win ask"><p>ここで終了しますか？ 回答済みの分の進捗は保存されています。</p><button class="btn sm" data-act="quitYes">終了する</button><button class="btn sm" data-act="quitNo">続ける</button></div>';
+  if (boss){
+    var two = S.trait.phases === 2, phase = two ? (S.bossHp > 100 ? 1 : 2) : 0, hpn = Math.max(0, S.hearts);
+    h += '<div class="win bosswin"><div class="sprite' + (S.fx === 'hit' ? ' hit' : '') + (phase === 2 ? ' awake' : '') + '">' + (S.bossHp <= 0 && S.answered ? '💥' : S.boss) + '</div>' +
+      '<div class="bossinfo"><div class="nm px"><span class="trait">' + esc(S.trait.name) + '</span>' + esc(S.bossName) + 'の番人' + (two ? '　第' + phase + '形態' : '') + '</div>' +
+      bar('boss', S.shownDisp, Math.round(hpDisp())) + '<div class="tdesc">' + esc(S.trait.desc) + '</div>' +
+      '<div class="hearts' + (S.fx === 'hurt' ? ' hurt' : '') + '" aria-label="残りハート ' + hpn + '">' + '❤️'.repeat(hpn) + '🖤'.repeat(S.heartsMax - hpn) + '</div></div></div>';
+    if (S.trait.timer && !S.answered){
+      var rem = S.tEnd ? Math.max(0, S.tEnd - Date.now()) : S.trait.timer * 1000;
+      h += '<div class="tbar"><i id="tbar" style="width:' + (rem / (S.trait.timer * 1000) * 100) + '%"></i><span id="tnum" class="px">' + Math.ceil(rem / 1000) + '</span></div>';
+    }
+  } else {
+    h += bar('pri', S.i / total * 100, (S.i + (S.answered ? 1 : 0)) / total * 100) + '<div style="height:14px"></div>';
+  }
+  if (S.answered && S.awakeNow) h += '<div class="win chest" style="border-color:var(--boss)"><span class="ico">😈</span><div>覚醒！ 第二形態が現れた</div></div>';
+  if (S.answered && S.chestNow) h += '<div class="win chest"><span class="ico">' + S.chestNow.icon + '</span><div>' + esc(S.chestNow.text) + '</div></div>';
+
+  h += '<section class="win qcard">' + (vm.tag ? '<span class="qtag">' + esc(vm.tag) + '</span><br>' : '') + '<div class="qtext">' + esc(vm.text) + '</div></section>';
+  S.order.forEach(function(idx, pos){
+    var cls = 'choice', isSel = S.sel.has(idx), isAns = vm.answer.indexOf(idx) >= 0, mk = '';
+    if (!S.answered){ if (isSel) cls += ' sel'; }
+    else { cls += ' locked'; if (isAns){ cls += ' ok'; mk = '✓'; } else if (isSel){ cls += ' ng'; mk = '✗'; } }
+    h += '<button class="' + cls + '" data-act="pick" data-i="' + idx + '"' + (S.answered ? ' tabindex="-1"' : '') + '><span class="ltr">' + LTR(pos) + '</span><span class="tx">' + esc(vm.choices[idx]) + '</span><span class="mk">' + mk + '</span></button>';
+  });
+  h += '<div class="actionbar">';
+  if (!S.answered){
+    if (multi) h += '<button class="btn pri grow" data-act="submit"' + (S.sel.size ? '' : ' disabled') + '>回答する</button>';
+    else h += '<div class="sub" style="flex:1;text-align:center">選択肢をタップして回答</div>';
+  } else {
+    var last = (S.mode === 'boss' && (S.bossHp <= 0 || S.hearts <= 0)) || S.i >= total - 1;
+    var fbTxt;
+    if (S.lastOk) fbTxt = '正解！' + (S.mode === 'boss' && S.combo >= 5 ? ' 会心' : '');
+    else fbTxt = (S.timedOut ? '時間切れ！　' : '不正解　') + '正解は ' + vm.answer.map(function(i){ return LTR(S.order.indexOf(i)); }).join(', ');
+    h += '<div class="fb ' + (S.lastOk ? 'ok' : 'ng') + '" role="status">' + esc(fbTxt) + '<span class="xpchip px">+' + S.lastGain + ' XP</span></div>' +
+      '<button class="btn pri" data-act="next">' + (last ? '結果を見る' : '次へ') + '</button>';
+  }
+  return h + '</div>';
+}
+
+function viewResult(){
+  var p = state.profile, L0 = GameCore.levelOf(S.startXp), L1 = GameCore.levelOf(p.xp);
+  var icon, title, sub, stat1 = '<div><span class="n px">' + S.correct + ' / ' + S.answeredN + '</span><span class="l">正解</span></div>';
+  if (S.outcome === 'win'){ icon = '🏆'; title = '撃破！'; sub = esc(S.bossName) + 'の番人（' + esc(S.trait.name) + '）を倒した'; }
+  else if (S.outcome === 'lose'){ icon = '💀'; title = '敗北…'; sub = 'ハートがなくなった。まちがえた問題を見直して再挑戦しよう'; }
+  else if (S.outcome === 'escape'){ icon = '💨'; title = '逃げられた'; sub = '問題が尽きた。もう一度挑もう'; }
+  else if (S.mode === 'time'){
+    icon = '⏱️'; title = S.newPB ? '自己ベスト更新！' : 'タイムアタック完了';
+    sub = '経過 ' + fmtSec(S.rawSec) + (S.penalty ? ' ＋ ミス' + (S.penalty / 5) + '回×5秒' : '') + (S.prevBest && !S.newPB ? '　ベスト ' + fmtSec(S.prevBest) : '');
+    stat1 = '<div><span class="n px">' + fmtSec(S.finalSec) + '</span><span class="l">タイム</span></div>';
+  }
+  else { icon = '🎉'; title = 'クエスト完了'; sub = 'お疲れさま。復習日程は自動で更新されました'; }
+  var h = '<section class="win res-h"><div class="big">' + icon + '</div><h1>' + title + '</h1><p class="sub">' + sub + '</p>' +
+    '<div class="stat">' + stat1 +
+    (S.mode === 'time' ? '<div><span class="n px">' + S.correct + ' / ' + S.answeredN + '</span><span class="l">正解</span></div>' : '') +
+    '<div><span class="n px">+' + S.gain + '</span><span class="l">獲得XP</span></div>' +
+    '<div><span class="n px">' + S.bestCombo + '</span><span class="l">最大連続</span></div></div>';
+  var bits = [];
+  if (S.xpMul > 1) bits.push('ダブルXPタイム ×' + S.xpMul);
+  if (S.bonus) bits.push('完走ボーナス +' + S.bonus + ' XP' + (S.perfect ? '（ノーミス含む）' : ''));
+  if (S.questDone) bits.push('デイリークエスト達成 +30 XP');
+  if (bits.length) h += '<p class="sub">' + esc(bits.join('　')) + '</p>';
+  h += '</section>';
+  if (L1 > L0) h += '<section class="win levelup"><span class="px">LEVEL UP!  Lv ' + L0 + ' → Lv ' + L1 + '</span><div>称号：' + esc(GameCore.rankOf(L1)) + '</div></section>';
+  if (S.events.length){
+    h += '<section class="win"><h2>できごと</h2>' + S.events.map(function(e){
+      return '<div class="evt"><span class="ico">' + e.icon + '</span><div>' + esc(e.text) + '</div></div>';
+    }).join('') + '</section>';
+  }
+  if (S.newBadges.length){
+    h += '<section class="win"><h2>新しいバッジ</h2>' + S.newBadges.map(function(b){
+      return '<div class="newb"><span class="ico">' + b.icon + '</span><div><b>' + esc(b.name) + '</b><div class="sub">' + esc(b.desc) + '　+25 XP</div></div></div>';
+    }).join('') + '</section>';
+  }
+  if (S.missed.length){
+    h += '<section class="win"><h2>まちがえた問題</h2>' + S.missed.map(function(m){
+      return '<div class="miss"><div class="mq">' + esc(m.q) + '</div><div class="ma">' + esc(m.ans) + '</div></div>';
+    }).join('') + '</section>';
+  }
+  h += '<div class="row"><button class="btn" data-act="goHome">ホームへ</button><button class="btn pri" data-act="retry">もう一度</button></div>';
+  return h;
+}
+
+function render(){
+  var h = '';
+  if (view === 'home') h = viewHome();
+  else if (view === 'dex') h = viewDex();
+  else if (view === 'add') h = viewAdd();
+  else if (view === 'badges') h = viewBadges();
+  else if (view === 'report') h = viewReport();
+  else if (view === 'settings') h = viewSettings();
+  else if (view === 'quiz') h = viewQuiz();
+  else if (view === 'result') h = viewResult();
+  var bare = view === 'quiz' || view === 'result';
+  var app = document.getElementById('app');
+  app.className = bare ? 'nobar' : '';
+  app.innerHTML = h + (bare ? '' : tabs());
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    document.querySelectorAll('.bar>i[data-w]').forEach(function(i){ i.style.width = i.getAttribute('data-w') + '%'; });
+  }); });
+  if (S && S.mode === 'boss') S.shownDisp = Math.round(hpDisp());
+}
+
+/* ================================================================
+   操作
+   ================================================================ */
+var A = {
+  tab:function(el){ view = el.getAttribute('data-tab'); ui.confirmDel = null; endSession(); window.scrollTo(0, 0); render(); },
+  goHome:function(){ view = 'home'; endSession(); window.scrollTo(0, 0); render(); },
+  startQuest:function(){ startSession(null, 'normal'); },
+  startDeck:function(el){ startSession([el.getAttribute('data-id')], el.getAttribute('data-mode')); },
+  retry:function(){ startSession(S.deckIds, S.mode); },
+  pick:function(el){
+    if (!S || S.answered) return;
+    var i = +el.getAttribute('data-i'), it = cur();
+    if (it.fmt === 'mcq' && it.vm.answer.length > 1){ if (S.sel.has(i)) S.sel.delete(i); else S.sel.add(i); render(); }
+    else { S.sel = new Set([i]); answer(); }
+  },
+  submit:function(){ if (S && !S.answered && S.sel.size) answer(); },
+  next:function(){ nextQ(); },
+  quit:function(){ S.quitAsk = true; render(); },
+  quitNo:function(){ S.quitAsk = false; render(); },
+  quitYes:function(){ view = 'home'; endSession(); window.scrollTo(0, 0); render(); },
+
+  dexSel:function(el){
+    var key = el.getAttribute('data-d') + '|' + el.getAttribute('data-q');
+    ui.dexSel = ui.dexSel === key ? null : key; render();
+  },
+  equip:function(el){ var p = state.profile, id = el.getAttribute('data-id'); p.title = p.title === id ? null : id; save(); render(); },
+
+  fillSample:function(){ ui.importText = FORMAT_EXAMPLE; ui.importMsg = null; render(); },
+  doImportQ:function(){
+    var res = parseBulk(ui.importText);
+    if (!res.items.length){ ui.importMsg = { ok:false, text:'読み込める問題がありませんでした。書式を確認してください。', errs:res.errors }; render(); return; }
+    var name = (ui.importName || '').trim() || '新しいデッキ';
+    var r = addDeckFromItems(name, res.items);
+    save();
+    ui.importMsg = { ok:true, errs:res.errors,
+      text:'「' + name + '」に' + r.added + '問を追加しました' + (r.dup ? '（重複' + r.dup + '問はスキップ）' : '') + (r.unarch ? '（アーカイブから戻しました）' : '') + (res.errors.length ? '。形式エラーの' + res.errors.length + '問は除外しました' : '') };
+    if (!res.errors.length) ui.importText = '';
+    render();
+  },
+  delDeck:function(el){ ui.confirmDel = el.getAttribute('data-id'); render(); },
+  delDeckNo:function(){ ui.confirmDel = null; render(); },
+  delDeckYes:function(el){
+    var id = el.getAttribute('data-id'), d = deckById(id);
+    if (!d) return;
+    state.decks = state.decks.filter(function(x){ return x.id !== id; });
+    ui.confirmDel = null; ui.dexSel = null; ui.msg = '「' + d.name + '」を削除しました。'; ui.msgKind = 'ok';
+    save(); render();
+  },
+  archive:function(el){
+    var d = deckById(el.getAttribute('data-id'));
+    if (!d) return;
+    d.archived = true; d.archivedAt = todayStr(); ui.confirmDel = null;
+    ui.msg = '「' + d.name + '」をアーカイブしました。ホームの「アーカイブ」から復習・復元・削除ができます。'; ui.msgKind = 'ok';
+    save(); render();
+  },
+  unarchive:function(el){
+    var d = deckById(el.getAttribute('data-id'));
+    if (!d) return;
+    d.archived = false; d.archivedAt = null; ui.confirmDel = null;
+    ui.msg = '「' + d.name + '」をデッキ一覧に戻しました。'; ui.msgKind = 'ok';
+    save(); render();
+  },
+  archToggle:function(){ ui.archOpen = !ui.archOpen; render(); },
+
+  setN:function(el){ state.settings.n = +el.getAttribute('data-v'); save(); render(); },
+  setGoal:function(el){ state.settings.goal = +el.getAttribute('data-v'); save(); render(); },
+  setFormats:function(el){ state.settings.formats = el.getAttribute('data-v'); save(); render(); },
+  setShuffle:function(el){ state.settings.shuffle = el.getAttribute('data-v') === 'on'; save(); render(); },
+  setTheme:function(el){ state.settings.theme = el.getAttribute('data-v'); applyTheme(); save(); render(); },
+
+  exportData:function(){
+    ui.exportText = JSON.stringify(state);
+    render();
+    var ta = document.getElementById('ex');
+    function fallback(){ try { ta.focus(); ta.select(); document.execCommand('copy'); } catch (e) {} }
+    try { navigator.clipboard.writeText(ui.exportText).catch(fallback); } catch (e) { fallback(); }
+  },
+  restore:function(){
+    try {
+      var o = JSON.parse(ui.restoreText);
+      if (!o || !Array.isArray(o.decks) || !o.profile) throw new Error('bad');
+      ui.restoreStage = true; ui.restoreMsg = { ok:true, text:'読み込めます（デッキ' + o.decks.length + '件、' + (o.profile.xp || 0) + ' XP）。置き換えてよければ下のボタンを押してください。' };
+    } catch (e) { ui.restoreStage = false; ui.restoreMsg = { ok:false, text:'書き出したテキストの全体を貼り付けてください（{ から } まで）。' }; }
+    render();
+  },
+  restoreNo:function(){ ui.restoreStage = false; ui.restoreMsg = null; render(); },
+  restoreYes:function(){
+    try {
+      state = normalize(JSON.parse(ui.restoreText)); state.seeded = true; save(); applyTheme();
+      ui.restoreStage = false; ui.restoreText = ''; ui.restoreMsg = { ok:true, text:'読み込みました。' };
+    } catch (e) { ui.restoreMsg = { ok:false, text:'読み込みに失敗しました。' }; }
+    render();
+  },
+  wipe:function(){ ui.wipeAsk = true; render(); },
+  wipeNo:function(){ ui.wipeAsk = false; render(); },
+  wipeYes:function(){
+    state = defaultState(); state.seeded = true; save(); applyTheme();
+    ui.wipeAsk = false; ui.exportText = ''; ui.homeShown = false; ui.dexSel = null; view = 'home'; render();
+  }
+};
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('[data-act]') : null;
+  if (!el) return;
+  var fn = A[el.getAttribute('data-act')];
+  if (fn) fn(el);
+});
+document.addEventListener('input', function(e){
+  var b = e.target.getAttribute && e.target.getAttribute('data-bind');
+  if (b) ui[b] = e.target.value;
+});
+document.addEventListener('change', function(e){
+  var id = e.target.getAttribute && e.target.getAttribute('data-exam');
+  if (!id) return;
+  var d = deckById(id);
+  if (d){
+    d.exam = e.target.value || null;
+    /* すでに全問習得済みの状態で日付を入れた場合は、報酬なしで「討伐済み」扱いにする（日付の付け替えでXPを稼げないように） */
+    d.raidDone = !!d.exam && d.questions.length > 0 && d.questions.every(function(x){ return x.box >= MASTER; });
+    save(); render();
+  }
+});
+
+applyTheme();
+render();
+})();
+</script>
+</body>
+</html>
